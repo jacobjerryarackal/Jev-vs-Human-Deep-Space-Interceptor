@@ -68,18 +68,19 @@ export default function DeepSpaceInterceptorPage() {
       />
 
       {/* 3. Live Decision Ticker */}
-      <div className="bg-slate-950 border border-slate-800 px-3 py-1 rounded-xl flex items-center gap-2 font-mono text-xs overflow-hidden shadow shrink-0">
+      <div className="bg-slate-950 border border-slate-800 px-3 py-1 rounded-xl flex items-center gap-2.5 font-mono text-xs overflow-hidden shadow shrink-0">
         {isLiveApi ? (
-          <span className="px-2 py-0.5 rounded bg-cyan-950/90 border border-cyan-400 text-cyan-300 font-bold uppercase shrink-0 text-[10px] flex items-center gap-1.5 shadow-[0_0_12px_rgba(6,182,212,0.45)]">
+          <span className="px-2 py-0.5 rounded bg-cyan-950 border border-cyan-400 text-cyan-300 font-bold text-[10px] flex items-center gap-1.5 shrink-0 shadow-[0_0_10px_rgba(6,182,212,0.35)]">
             <Zap className="w-3 h-3 text-cyan-300 fill-cyan-400 inline" />
             <span>⚡ JEV LIVE API (VERCEL GATEWAY)</span>
           </span>
         ) : (
-          <span className="px-2 py-0.5 rounded bg-[#09152b] border border-amber-500/50 text-amber-300 font-bold uppercase shrink-0 text-[10px] flex items-center gap-1.5 shadow-[0_0_8px_rgba(245,158,11,0.25)]">
+          <span className="px-2 py-0.5 rounded bg-amber-950/80 border border-amber-500/50 text-amber-300 font-bold text-[10px] flex items-center gap-1.5 shrink-0 shadow-[0_0_8px_rgba(245,158,11,0.2)]">
             <Settings className="w-3 h-3 text-amber-400 inline animate-[spin_8s_linear_infinite]" />
             <span>⚙️ JEV SYSTEM 1: LOCAL HEURISTIC</span>
           </span>
         )}
+        <span className="text-slate-600 shrink-0 font-bold select-none">•</span>
         <div className="text-slate-300 truncate text-[11px] font-mono tracking-wide">
           {tickerText}
         </div>
@@ -313,21 +314,15 @@ export default function DeepSpaceInterceptorPage() {
             <canvas ref={jevCanvasRef} className="w-full h-full block" />
 
             {/* Tactical Overlay Floating Window */}
-            <div className="absolute top-2 left-2 bg-slate-950/95 border border-cyan-500/50 p-2 rounded-lg font-mono text-[9px] w-72 shadow-2xl pointer-events-none z-10">
-              <div className="flex items-center justify-between text-cyan-300 border-b border-slate-800 pb-1 mb-1 font-bold">
-                <div className="flex items-center gap-1.5 truncate">
-                  <span className="tracking-tight shrink-0">JEV COGNITIVE MATRIX</span>
-                  <span
-                    className={`text-[7.5px] px-1.5 py-0.5 rounded font-mono font-semibold uppercase ${
-                      isLiveApi
-                        ? "text-cyan-300 bg-cyan-950 border border-cyan-400/70 shadow-[0_0_8px_rgba(6,182,212,0.35)]"
-                        : "text-amber-300 bg-[#09152b] border border-amber-500/50"
-                    }`}
-                  >
-                    {isLiveApi ? `SOURCE: LIVE API (${latencyMs}ms)` : "SOURCE: LOCAL HEURISTIC"}
+            <div className="absolute top-2 left-2 bg-slate-950/95 border border-cyan-500/50 p-2 rounded-lg font-mono text-[9px] w-64 shadow-2xl pointer-events-none z-10">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-1 mb-1.5">
+                <div className="flex flex-col">
+                  <span className="text-cyan-300 font-bold text-[10px] tracking-wide">JEV COGNITIVE MATRIX</span>
+                  <span className={`text-[8px] ${isLiveApi ? "text-cyan-400" : "text-amber-400/90"}`}>
+                    {isLiveApi ? (latencyMs ? `SOURCE: VERCEL GATEWAY (${latencyMs}ms)` : "SOURCE: VERCEL GATEWAY") : "SOURCE: LOCAL HEURISTIC"}
                   </span>
                 </div>
-                <span className="px-1.5 py-0.2 rounded bg-cyan-950 border border-cyan-400 text-cyan-300 uppercase text-[8px] shrink-0">
+                <span className="px-1.5 py-0.5 rounded bg-cyan-950 border border-cyan-400 text-cyan-300 uppercase text-[9px] font-bold shrink-0">
                   {jevStats.action}
                 </span>
               </div>

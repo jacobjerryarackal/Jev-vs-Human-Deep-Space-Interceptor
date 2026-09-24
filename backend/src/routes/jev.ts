@@ -27,11 +27,13 @@ jevRouter.post("/jev-decide", async (req: Request, res: Response): Promise<void>
 });
 
 jevRouter.get("/health", (_req: Request, res: Response) => {
+  const hasGateway = Boolean(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_AI_GATEWAY_TOKEN);
   const hasKey = Boolean(process.env.JEV_API_KEY || process.env.TYPESAFE_API_KEY);
+  const mode = hasGateway ? "vercel-ai-gateway" : hasKey ? "typesafe-live" : "intelligent-heuristic";
   res.json({
     status: "ok",
     service: "Jev System 1 Decision Proxy",
-    mode: hasKey ? "typesafe-live" : "intelligent-heuristic",
+    mode,
     timestamp: new Date().toISOString(),
   });
 });

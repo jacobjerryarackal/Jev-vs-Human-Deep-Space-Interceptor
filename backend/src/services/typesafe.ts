@@ -188,9 +188,10 @@ export async function getJevDecision(state: GameState): Promise<JevDecisionRespo
 
   // 1. Vercel AI Gateway Decisions API (Model: typesafe/jev)
   if (gatewayKey && gatewayKey !== "mock") {
+    console.log("[BACKEND] Sending request to Vercel Gateway...");
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 190);
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
 
       const response = await fetch("https://gateway.ai.vercel.com/v1/decisions", {
         method: "POST",
@@ -204,12 +205,12 @@ export async function getJevDecision(state: GameState): Promise<JevDecisionRespo
           questions: {
             tactic: {
               type: "choice",
-              instructions: "Select optimal maneuver for the starfighter.",
+              instructions: "Select optimal maneuver.",
               criteria: {
-                DODGE_LEFT: "Incoming threat in current flight lane, left corridor open",
-                DODGE_RIGHT: "Incoming threat in current flight lane, right corridor open",
-                FIRE_ALIGN: "Lane clear of hazard and target ship aligned",
-                HARVEST_CORE: "Trajectory clear to collect falling energy core",
+                DODGE_LEFT: "Hazard in path, left open",
+                DODGE_RIGHT: "Hazard in path, right open",
+                FIRE_ALIGN: "Aligned to fire",
+                HARVEST_CORE: "Harvest energy core",
               },
             },
           },
@@ -219,38 +220,44 @@ export async function getJevDecision(state: GameState): Promise<JevDecisionRespo
 
       clearTimeout(timeoutId);
 
-      if (response.ok) {
-        const data = (await response.json()) as any;
-        const latencyMs = Math.round(performance.now() - startTime);
-
-        // Extract decision choice from tactic answer
-        const rawChoice = data.choice || data?.answers?.tactic?.choice || data?.tactic;
-        const choice: JevChoice = ["DODGE_LEFT", "DODGE_RIGHT", "FIRE_ALIGN", "HARVEST_CORE"].includes(rawChoice)
-          ? rawChoice
-          : "FIRE_ALIGN";
-
-        const probabilities: Record<JevChoice, number> = data.probabilities || data?.answers?.tactic?.probabilities || {
-          DODGE_LEFT: choice === "DODGE_LEFT" ? 0.7 : 0.1,
-          DODGE_RIGHT: choice === "DODGE_RIGHT" ? 0.7 : 0.1,
-          FIRE_ALIGN: choice === "FIRE_ALIGN" ? 0.7 : 0.1,
-          HARVEST_CORE: choice === "HARVEST_CORE" ? 0.7 : 0.1,
-        };
-
-        return {
-          choice,
-          probabilities,
-          latencyMs,
-          provider: "vercel-ai-gateway",
-          telemetry: {
-            threatScore: data.threatScore ?? 0.45,
-            targetAlignmentScore: data.alignmentScore ?? 0.85,
-            harvestProximityScore: data.harvestScore ?? 0.2,
-            recommendedAction: choice,
-          },
-        };
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error(`[BACKEND VERCEL ERROR] Status: ${response.status}`, errText);
+        return computeHeuristicDecision(state, startTime);
       }
-    } catch {
-      // Fallback on timeout or gateway error
+
+      const data = (await response.json()) as any;
+      console.log("[BACKEND] Live Vercel decision received successfully:", data);
+      const latencyMs = Math.round(performance.now() - startTime);
+
+      // Extract decision choice from tactic answer
+      const rawChoice = data.choice || data?.answers?.tactic?.choice || data?.tactic;
+      const choice: JevChoice = ["DODGE_LEFT", "DODGE_RIGHT", "FIRE_ALIGN", "HARVEST_CORE"].includes(rawChoice)
+        ? rawChoice
+        : "FIRE_ALIGN";
+
+      const probabilities: Record<JevChoice, number> = data.probabilities || data?.answers?.tactic?.probabilities || {
+        DODGE_LEFT: choice === "DODGE_LEFT" ? 0.7 : 0.1,
+        DODGE_RIGHT: choice === "DODGE_RIGHT" ? 0.7 : 0.1,
+        FIRE_ALIGN: choice === "FIRE_ALIGN" ? 0.7 : 0.1,
+        HARVEST_CORE: choice === "HARVEST_CORE" ? 0.7 : 0.1,
+      };
+
+      return {
+        choice,
+        probabilities,
+        latencyMs,
+        provider: "vercel-ai-gateway",
+        telemetry: {
+          threatScore: data.threatScore ?? 0.45,
+          targetAlignmentScore: data.alignmentScore ?? 0.85,
+          harvestProximityScore: data.harvestScore ?? 0.2,
+          recommendedAction: choice,
+        },
+      };
+    } catch (err) {
+      console.error("[BACKEND NETWORK ERROR]", err);
+      return computeHeuristicDecision(state, startTime);
     }
   }
 

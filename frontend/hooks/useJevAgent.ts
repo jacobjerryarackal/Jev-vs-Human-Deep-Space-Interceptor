@@ -100,7 +100,7 @@ export function useJevAgent() {
 
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 190);
+        const timeout = setTimeout(() => controller.abort(), 2500);
 
         const res = await fetch(`${BACKEND_URL}/api/jev-decide`, {
           method: "POST",
