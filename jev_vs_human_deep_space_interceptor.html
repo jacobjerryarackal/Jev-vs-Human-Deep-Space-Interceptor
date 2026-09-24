@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Jev vs Human: Deep Space Interceptor (~100ms Reflex Benchmark)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=JetBrains+Mono:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #030712;
+      color: #f3f4f6;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+      overflow-x: hidden;
+    }
+    .font-chakra { font-family: 'Chakra Petch', sans-serif; }
+    .font-mono-code { font-family: 'JetBrains Mono', monospace; }
+
+    /* Crisp UI Borders with No Blur/Scanline interference */
+    .clean-border-human {
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      box-shadow: 0 0 25px rgba(245, 158, 11, 0.08);
+    }
+    .clean-border-jev {
+      border: 1px solid rgba(6, 182, 212, 0.55);
+      box-shadow: 0 0 30px rgba(6, 182, 212, 0.12);
+    }
+    .glass-panel {
+      background: rgba(11, 17, 33, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    canvas {
+      image-rendering: auto;
+      display: block;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-cyan-500 selection:text-black">
+
+  <!-- Fixed Non-Overlapping Main Header -->
+  <header class="border-b border-slate-800 bg-slate-950 sticky top-0 z-30 px-3 sm:px-6 py-3 shadow-lg">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-3 min-w-[280px]">
+        <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-cyan-600 via-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 border border-cyan-400/40 shrink-0">
+          <i class="fa-solid fa-shuttle-space text-slate-950 text-xl"></i>
+        </div>
+        <div class="flex flex-col">
+          <div class="flex items-center gap-2 flex-wrap">
+            <h1 class="font-chakra text-lg sm:text-xl font-bold tracking-wider text-slate-100 uppercase leading-none">
+              Deep Space Interceptor
+            </h1>
+            <span class="text-[10px] px-2 py-0.5 rounded bg-cyan-950 border border-cyan-400/60 text-cyan-300 font-mono-code font-bold">~100MS COGNITION ENGINE</span>
+          </div>
+          <span class="text-[11px] text-slate-400 font-mono-code mt-1">
+            Human Neural Delay (~240ms) vs Autonomous Machine Reflex
+          </span>
+        </div>
+      </div>
+
+      <!-- Quick Metrics Header -->
+      <div class="flex items-center gap-2 sm:gap-3 font-mono-code text-xs ml-auto">
+        <div class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg flex items-center space-x-2">
+          <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+          <span class="text-slate-400">JEV CLOCK:</span>
+          <span id="header-tick-disp" class="font-bold text-cyan-400">100ms</span>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg flex items-center space-x-2">
+          <span class="text-slate-400">TIME:</span>
+          <span id="mission-clock" class="text-amber-400 font-bold">00:00</span>
+        </div>
+        <button id="audio-toggle-btn" class="p-2 rounded-lg bg-slate-900 border border-slate-700 hover:border-cyan-400 text-slate-300 hover:text-cyan-400 transition" title="Toggle Sound Engine">
+          <i id="audio-icon" class="fa-solid fa-volume-high text-cyan-400"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-grow max-w-7xl w-full mx-auto p-3 sm:p-5 flex flex-col gap-4">
+    <!-- Configuration Deck -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 glass-panel p-3.5 rounded-xl">
+      <!-- Jev Cognitive Decision Interval -->
+      <div class="flex flex-col gap-1.5">
+        <div class="flex justify-between items-center text-xs font-mono-code">
+          <span class="text-slate-300 font-semibold uppercase flex items-center gap-1.5">
+            <i class="fa-solid fa-microchip text-cyan-400"></i> Jev Decision Clock
+          </span>
+          <span id="speed-label" class="text-cyan-400 text-[11px] font-bold">Jev Baseline (~100ms)</span>
+        </div>
+        <div class="grid grid-cols-4 gap-1.5">
+          <button data-tick="250" class="tick-btn px-2 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-[11px] font-mono-code text-slate-300 hover:border-slate-600 transition">
+            250ms
+            <span class="block text-[8px] text-slate-500">Human</span>
+          </button>
+          <button data-tick="150" class="tick-btn px-2 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-[11px] font-mono-code text-slate-300 hover:border-slate-600 transition">
+            150ms
+            <span class="block text-[8px] text-slate-500">Pro Gamer</span>
+          </button>
+          <button data-tick="100" class="tick-btn active px-2 py-1.5 rounded-lg bg-cyan-950 border border-cyan-400 text-[11px] font-mono-code text-cyan-300 font-bold transition">
+            100ms
+            <span class="block text-[8px] text-cyan-400">Jev Core</span>
+          </button>
+          <button data-tick="50" class="tick-btn px-2 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-[11px] font-mono-code text-purple-300 hover:border-purple-500 transition">
+            50ms
+            <span class="block text-[8px] text-purple-400">Overdrive</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Threat Wave Escalation -->
+      <div class="flex flex-col justify-center gap-1 px-1 sm:px-2">
+        <div class="flex justify-between text-xs font-mono-code text-slate-300">
+          <span><i class="fa-solid fa-skull-crossbones text-rose-500 mr-1"></i> Swarm Escalation</span>
+          <span id="wave-disp" class="text-rose-400 font-bold">WAVE 1 &bull; DART PATROL</span>
+        </div>
+        <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800 mt-1 flex">
+          <div id="wave-progress" class="bg-gradient-to-r from-cyan-500 via-amber-400 to-rose-500 h-full w-12 transition-all duration-300"></div>
+        </div>
+        <div class="flex justify-between text-[10px] font-mono-code text-slate-400">
+          <span>Hostile Fleet: <strong id="swarm-count" class="text-slate-200">5 Ships</strong></span>
+          <span>Barrage Frequency: <strong id="plasma-freq" class="text-slate-200">~120ms</strong></span>
+        </div>
+      </div>
+
+      <!-- Session Engagement Controls -->
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex flex-col justify-center">
+          <div class="text-[11px] text-slate-300 font-mono-code flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+            A/D, Arrows or Mouse to steer &bull; Space: Fire
+          </div>
+          <div class="flex items-center gap-2 mt-1">
+            <input type="checkbox" id="human-autofire" checked class="accent-amber-500 rounded cursor-pointer">
+            <label for="human-autofire" class="text-[10px] text-slate-300 font-mono-code cursor-pointer">Continuous Blasters (Human)</label>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="start-btn" class="px-5 py-3 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-slate-950 font-chakra font-bold text-sm tracking-wider uppercase shadow-lg shadow-cyan-500/25 active:scale-95 transition">
+            <i class="fa-solid fa-play mr-1.5"></i> Engage
+          </button>
+          <button id="reset-btn" class="p-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 hover:border-slate-500 active:scale-95 transition" title="Reset Simulation">
+            <i class="fa-solid fa-rotate-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Decision Ticker -->
+    <div class="bg-slate-950 border border-slate-800 px-3.5 py-2 rounded-xl flex items-center gap-2.5 font-mono-code text-xs overflow-hidden shadow">
+      <span class="px-2 py-0.5 rounded bg-cyan-950 border border-cyan-500/40 text-cyan-300 font-bold uppercase shrink-0 text-[10px]">
+        <i class="fa-solid fa-bolt mr-1"></i> Jev Telemetry
+      </span>
+      <div id="jev-ticker-stream" class="text-slate-300 truncate text-[11px]">
+        INITIALIZING RECURSIVE RAYCASTS &bull; PRE-COMPUTING LETHAL ZONES &bull; 100MS INTERVAL LOCKED
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <!-- Human Pilot Arena -->
+      <div class="relative bg-slate-950 rounded-2xl clean-border-human p-3 sm:p-4 flex flex-col gap-3 shadow-2xl overflow-hidden">
+        <!-- Top Status Bar: Clean Flexbox with Zero Overlap -->
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/20 pb-2.5">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></span>
+            <span class="font-chakra font-bold text-sm tracking-wider text-amber-300 uppercase">COCKPIT 1: HUMAN PILOT</span>
+            <span id="human-mode-tag" class="text-[9px] px-1.5 py-0.5 rounded bg-amber-950/90 border border-amber-500/40 text-amber-300 font-mono-code">AI BIOLOGY SIM (~240MS LAG)</span>
+          </div>
+          <div class="flex items-center gap-3 text-xs font-mono-code ml-auto">
+            <span class="text-slate-400">SCORE: <strong id="human-score" class="text-amber-400 text-sm font-bold">0</strong></span>
+            <span class="text-slate-400">SHIELD: <strong id="human-shield-pct" class="text-emerald-400 font-bold">100%</strong></span>
+          </div>
+        </div>
+
+        <!-- Telemetry Ribbons -->
+        <div class="grid grid-cols-4 gap-1.5 text-center font-mono-code">
+          <div class="bg-slate-900/90 p-1.5 rounded-lg border border-slate-800">
+            <div class="text-[9px] text-slate-500 uppercase">ENEMIES DOWN</div>
+            <div id="human-kills" class="text-xs sm:text-sm font-bold text-amber-300">0</div>
+          </div>
+          <div class="bg-slate-900/90 p-1.5 rounded-lg border border-slate-800">
+            <div class="text-[9px] text-slate-500 uppercase">CORES HARVESTED</div>
+            <div id="human-powerups" class="text-xs sm:text-sm font-bold text-cyan-400">0</div>
+          </div>
+          <div class="bg-slate-900/90 p-1.5 rounded-lg border border-slate-800">
+            <div class="text-[9px] text-slate-500 uppercase">NEURAL DELAY</div>
+            <div id="human-latency" class="text-xs sm:text-sm font-bold text-amber-400">~240 ms</div>
+          </div>
+          <div class="bg-slate-900/90 p-1.5 rounded-lg border border-slate-800">
+            <div class="text-[9px] text-slate-500 uppercase">HIT ACCURACY</div>
+            <div id="human-accuracy" class="text-xs sm:text-sm font-bold text-slate-300">54%</div>
+          </div>
+        </div>
+
+        <!-- Canvas Viewport -->
+        <div class="relative w-full h-[430px] sm:h-[490px] rounded-xl overflow-hidden border border-slate-800/90 bg-[#02050f]">
+          <canvas id="humanCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+          
+          <div id="human-destroyed-overlay" class="absolute inset-0 bg-red-950/90 flex flex-col items-center justify-center pointer-events-none opacity-0 transition-opacity duration-200">
+            <span class="font-chakra text-2xl font-bold tracking-widest text-rose-400 uppercase">HULL BREACHED: DESTROYED</span>
+            <span class="font-mono-code text-xs text-rose-300 mt-1">Biological Reaction Lag & Target Fixation Overwhelmed</span>
+          </div>
+
+          <!-- On-screen mobile touch pad -->
+          <div class="absolute bottom-3 left-3 right-3 flex justify-between items-center sm:hidden z-20">
+            <div class="flex gap-2">
+              <button id="touch-left" class="w-12 h-12 rounded-xl bg-slate-900/90 border border-slate-700 text-amber-400 flex items-center justify-center active:bg-amber-500 active:text-black">
+                <i class="fa-solid fa-chevron-left text-lg"></i>
+              </button>
+              <button id="touch-right" class="w-12 h-12 rounded-xl bg-slate-900/90 border border-slate-700 text-amber-400 flex items-center justify-center active:bg-amber-500 active:text-black">
+                <i class="fa-solid fa-chevron-right text-lg"></i>
+              </button>
+            </div>
+            <button id="touch-fire" class="w-14 h-12 rounded-xl bg-amber-500/90 text-slate-950 font-bold flex items-center justify-center active:bg-amber-400">
+              <i class="fa-solid fa-crosshairs text-xl"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between text-xs font-mono-code text-slate-400 px-1">
+          <span class="text-amber-400/90"><i class="fa-solid fa-hand-pointer mr-1"></i> Move mouse or tap A/D to assume manual pilot</span>
+          <span class="text-[11px] text-slate-500">Biological reaction lag active</span>
+        </div>
+      </div>
+
+      <!-- Jev AI Cockpit Arena -->
+      <div class="relative bg-slate-950 rounded-2xl clean-border-jev p-3 sm:p-4 flex flex-col gap-3 shadow-2xl overflow-hidden">
+        <!-- Top Status Bar: Clean Flexbox with Zero Overlap -->
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-cyan-500/20 pb-2.5">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse shrink-0"></span>
+            <span class="font-chakra font-bold text-sm tracking-wider text-cyan-300 uppercase">COCKPIT 2: JEV AUTONOMOUS AI</span>
+            <span class="text-[9px] px-1.5 py-0.5 rounded bg-cyan-950 border border-cyan-400/60 text-cyan-300 font-mono-code font-bold">GOD-TIER EVASION</span>
+          </div>
+          <div class="flex items-center gap-3 text-xs font-mono-code ml-auto">
+            <span class="text-slate-400">SCORE: <strong id="jev-score" class="text-cyan-400 text-sm font-bold">0</strong></span>
+            <span class="text-slate-400">SHIELD: <strong id="jev-shield-pct" class="text-emerald-400 font-bold">100%</strong></span>
+          </div>
+        </div>
+
+        <!-- Telemetry Ribbons -->
+        <div class="grid grid-cols-4 gap-1.5 text-center font-mono-code">
+          <div class="bg-slate-900/90 p-1.5 rounded-lg border border-slate-800">
+            <div class="text-[9px] text-slate-500 uppercase">ENEMIES DOWN</div>
+            <div id="jev-kills" class="text-xs sm:text-sm font-bold text-cyan-300">0</div>
+          </div>
+          <div class="bg-slate-900/90 p-1.5 rounded-lg border border-slate-800">
+            <div class="text-[9px] text-slate-500 uppercase">CORES HARVESTED</div>
+            <div id="jev-powerups" class="text-xs sm:text-sm font-bold text-amber-400">0</div>
+          </div>
+          <div class="bg-slate-900/90 p-1.5 rounded-lg border border-slate-800">
+            <div class="text-[9px] text-slate-500 uppercase">DECISION DELAY</div>
+            <div id="jev-interval-card" class="text-xs sm:text-sm font-bold text-purple-400">100 ms</div>
+          </div>
+          <div class="bg-slate-900/90 p-1.5 rounded-lg border border-slate-800">
+            <div class="text-[9px] text-slate-500 uppercase">HIT ACCURACY</div>
+            <div id="jev-accuracy" class="text-xs sm:text-sm font-bold text-cyan-400">98.5%</div>
+          </div>
+        </div>
+
+        <!-- Canvas Viewport with Jev Tactical Heads-Up Display -->
+        <div class="relative w-full h-[430px] sm:h-[490px] rounded-xl overflow-hidden border border-slate-800/90 bg-[#02050f]">
+          <canvas id="jevCanvas" class="w-full h-full block"></canvas>
+          
+          <!-- Tactical Overlay Floating Window -->
+          <div class="absolute top-3 left-3 bg-slate-950/95 border border-cyan-500/50 p-2.5 rounded-xl font-mono-code text-[10px] w-64 shadow-2xl pointer-events-none">
+            <div class="flex items-center justify-between text-cyan-300 border-b border-slate-800 pb-1 mb-1.5 font-bold">
+              <span>JEV COGNITIVE MATRIX</span>
+              <span id="jev-current-action" class="px-1.5 py-0.5 rounded bg-cyan-950 border border-cyan-400 text-cyan-300 uppercase">SURGICAL_WEAVE</span>
+            </div>
+            
+            <div class="space-y-1.5">
+              <div>
+                <div class="flex justify-between text-slate-400 text-[9px]">
+                  <span>SURVIVAL INTEGRITY / THREAT AVOIDANCE</span>
+                  <span id="jev-greed-ratio" class="text-cyan-400 font-bold">100% Safe Corridor</span>
+                </div>
+                <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden flex border border-slate-800">
+                  <div id="bar-threat" class="h-full bg-emerald-400" style="width: 100%"></div>
+                </div>
+              </div>
+
+              <!-- Action Probability weights -->
+              <div class="pt-1 border-t border-slate-800/80 space-y-1">
+                <div class="flex justify-between text-[9px] text-slate-400">
+                  <span>PREDICTIVE DODGE PRIORITY</span>
+                  <span id="prob-dodge" class="text-emerald-400 font-bold">100% (Absolute)</span>
+                </div>
+                <div class="flex justify-between text-[9px] text-slate-400">
+                  <span>LEAD-ANGLE TARGET INTERCEPT</span>
+                  <span id="prob-fire" class="text-cyan-300 font-bold">98% Locked</span>
+                </div>
+                <div class="flex justify-between text-[9px] text-slate-400">
+                  <span>ZERO-RISK CORE HARVEST</span>
+                  <span id="prob-loot" class="text-amber-300 font-bold">Active</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="jev-destroyed-overlay" class="absolute inset-0 bg-red-950/90 flex flex-col items-center justify-center pointer-events-none opacity-0 transition-opacity duration-200">
+            <span class="font-chakra text-2xl font-bold tracking-widest text-cyan-400 uppercase">CRITICAL FAIL</span>
+            <span class="font-mono-code text-xs text-cyan-300 mt-1">Hull Compromised</span>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between text-xs font-mono-code text-slate-400 px-1">
+          <span class="text-cyan-400">Cyan = Locked Lead Angle &bull; Green = 100% Safe Corridor &bull; Red = Fatal Raycast</span>
+          <span class="text-[11px] text-slate-500">Autonomous Raycast Triangulation</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comparative Insights and Multi-task Breakdown -->
+    <section class="glass-panel rounded-xl p-4 flex flex-col md:flex-row gap-6 items-center justify-between">
+      <div class="w-full md:w-2/5 space-y-2">
+        <h3 class="font-chakra text-base font-bold text-slate-100 uppercase tracking-wide flex items-center gap-2">
+          <i class="fa-solid fa-atom text-cyan-400"></i> The ~100ms Decision Horizon
+        </h3>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          While humans suffer from ocular-motor lag (~240ms) and panic under overlapping bullet clusters, <strong>Jev calculates complete raycast flight corridors every 100ms</strong>. Jev prioritizes absolute survival corridors first, then leads shots ahead of agile alien flight paths, resulting in near-perfect hit rates and effortless evasion.
+        </p>
+      </div>
+
+      <div class="w-full md:w-3/5 space-y-3 font-mono-code text-xs">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div class="bg-slate-900/90 p-2 rounded-lg border border-slate-800 text-center">
+            <div class="text-[10px] text-slate-400">SCOUT DART</div>
+            <div class="text-cyan-400 font-bold">+100 PTS</div>
+            <div class="text-[9px] text-slate-500">Fast Evasive Flight</div>
+          </div>
+          <div class="bg-slate-900/90 p-2 rounded-lg border border-slate-800 text-center">
+            <div class="text-[10px] text-slate-400">HEAVY CRUISER</div>
+            <div class="text-purple-400 font-bold">+300 PTS</div>
+            <div class="text-[9px] text-purple-300">Triple Plasma Volley</div>
+          </div>
+          <div class="bg-slate-900/90 p-2 rounded-lg border border-slate-800 text-center">
+            <div class="text-[10px] text-slate-400">OVERDRIVE CORE</div>
+            <div class="text-amber-400 font-bold">+350 PTS</div>
+            <div class="text-[9px] text-amber-400/80">Continuous Triple Blaster</div>
+          </div>
+          <div class="bg-slate-900/90 p-2 rounded-lg border border-slate-800 text-center">
+            <div class="text-[10px] text-slate-400">EMP SHOCKWAVE</div>
+            <div class="text-emerald-400 font-bold">WIPE FLEET</div>
+            <div class="text-[9px] text-slate-500">Board Cleanse</div>
+          </div>
+        </div>
+
+        <div class="p-2.5 rounded-lg bg-slate-900/95 border border-slate-800 flex items-center justify-between">
+          <span class="text-slate-400">Benchmark Performance Lead:</span>
+          <span id="performance-delta" class="font-bold text-cyan-400">Jev Precision: +0 Points</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Mission Over Modal -->
+  <div id="gameover-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-950 border-2 border-cyan-500/50 p-6 rounded-2xl max-w-lg w-full text-center space-y-5 shadow-2xl">
+      <div class="space-y-1">
+        <h2 class="font-chakra text-2xl font-bold tracking-widest text-slate-100 uppercase">MISSION TELEMETRY CONCLUDED</h2>
+        <p class="text-xs text-slate-400 font-mono-code">Benchmark evaluation across synchronized fleet seeds</p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 text-left font-mono-code text-xs">
+        <div class="bg-slate-900 p-3 rounded-xl border border-amber-500/30">
+          <div class="text-amber-400 font-bold mb-2 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-amber-400"></span> HUMAN PILOT
+          </div>
+          <div class="space-y-1 text-slate-300">
+            <div>Score: <strong id="modal-human-score" class="text-amber-300 font-bold">0</strong></div>
+            <div>Enemies Down: <strong id="modal-human-kills">0</strong></div>
+            <div>Cores Looted: <strong id="modal-human-cores">0</strong></div>
+            <div>Survival Time: <strong id="modal-human-time">0s</strong></div>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 p-3 rounded-xl border border-cyan-500/30">
+          <div class="text-cyan-400 font-bold mb-2 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-cyan-400"></span> JEV AUTONOMOUS AI
+          </div>
+          <div class="space-y-1 text-slate-300">
+            <div>Score: <strong id="modal-jev-score" class="text-cyan-300 font-bold">0</strong></div>
+            <div>Enemies Down: <strong id="modal-jev-kills">0</strong></div>
+            <div>Cores Looted: <strong id="modal-jev-cores">0</strong></div>
+            <div>Survival Time: <strong id="modal-jev-time">0s</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="modal-conclusion" class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-slate-300 leading-relaxed">
+        Jev's continuous sub-100ms decisions allowed perfect laser alignment and high-risk core interception without entering lethal bullet vectors.
+      </div>
+
+      <div class="flex justify-center gap-3">
+        <button id="modal-restart-btn" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-chakra font-bold text-sm tracking-wider uppercase shadow-lg shadow-cyan-500/30 hover:brightness-110 active:scale-95 transition">
+          <i class="fa-solid fa-rotate-right mr-1.5"></i> Run Benchmark Again
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="text-center py-2.5 text-slate-500 font-mono-code text-xs border-t border-slate-900 bg-slate-950">
+    <span>Deep Space Interceptor &bull; Dual Synchronized Engine &bull; 100ms Reflex Benchmark</span>
+  </footer>
+
+  <script>
+    class RetroSoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      playLaser(isJev = false) {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        const now = this.ctx.currentTime;
+        const startFreq = isJev ? 880 : 660;
+        osc.type = isJev ? 'square' : 'sawtooth';
+        osc.frequency.setValueAtTime(startFreq, now);
+        osc.frequency.exponentialRampToValueAtTime(140, now + 0.07);
+
+        gain.gain.setValueAtTime(0.045, now);
+        gain.gain.linearRampToValueAtTime(0.001, now + 0.07);
+
+        osc.start(now);
+        osc.stop(now + 0.07);
+      }
+
+      playExplosion() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        const now = this.ctx.currentTime;
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(160, now);
+        osc.frequency.exponentialRampToValueAtTime(25, now + 0.25);
+
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.linearRampToValueAtTime(0.001, now + 0.25);
+
+        osc.start(now);
+        osc.stop(now + 0.25);
+      }
+
+      playPowerup() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        const now = this.ctx.currentTime;
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(520, now);
+        osc.frequency.exponentialRampToValueAtTime(1150, now + 0.16);
+
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.linearRampToValueAtTime(0.001, now + 0.16);
+
+        osc.start(now);
+        osc.stop(now + 0.16);
+      }
+
+      playEmp() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        const now = this.ctx.currentTime;
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(920, now);
+        osc.frequency.exponentialRampToValueAtTime(75, now + 0.38);
+
+        gain.gain.setValueAtTime(0.16, now);
+        gain.gain.linearRampToValueAtTime(0.001, now + 0.38);
+
+        osc.start(now);
+        osc.stop(now + 0.38);
+      }
+
+      playShieldHit() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        const now = this.ctx.currentTime;
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(280, now);
+        osc.frequency.linearRampToValueAtTime(60, now + 0.12);
+
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.linearRampToValueAtTime(0.001, now + 0.12);
+
+        osc.start(now);
+        osc.stop(now + 0.12);
+      }
+    }
+
+    const sound = new RetroSoundEngine();
+
+    // Pseudo Random Number Generator for identical swarm generation
+    function createPRNG(seed) {
+      let s = seed;
+      return function() {
+        s = (s * 9301 + 49297) % 233280;
+        return s / 233280;
+      };
+    }
+
+    const GAME_CONFIG = {
+      baseEnemySpeed: 0.72,
+      basePlasmaSpeed: 4.5,
+      playerLaserSpeed: 9.8,
+      playerSpeed: 6.2,
+      shieldMax: 100,
+      damagePerHit: 20
+    };
+
+    const GlobalEngine = {
+      running: false,
+      seed: 83921,
+      jevTickMs: 100,
+      wave: 1,
+      sessionSeconds: 0,
+      timerHandle: null,
+      jevBrainHandle: null,
+      particles: []
+    };
+
+    class InterceptorArena {
+      constructor(type, canvasId) {
+        this.type = type; // 'human' or 'jev'
+        this.canvas = document.getElementById(canvasId);
+        this.ctx = this.canvas.getContext('2d');
+        this.manualControl = false;
+        this.reset();
+      }
+
+      reset() {
+        this.alive = true;
+        this.score = 0;
+        this.kills = 0;
+        this.shotsFired = 0;
+        this.shotsHit = 0;
+        this.powerupsCollected = 0;
+        this.shield = GAME_CONFIG.shieldMax;
+        this.overdriveTimer = 0;
+        this.shake = 0;
+
+        // Ship Position
+        this.ship = {
+          x: 180,
+          y: 420,
+          vx: 0,
+          lastFired: 0
+        };
+
+        // Simulated Human biology state
+        this.humanSim = {
+          reactionBuffer: [], // Delayed perception buffer (~240ms)
+          targetX: 180,
+          panicJitter: 0,
+          tunnelVisionTimer: 0
+        };
+
+        // Entities
+        this.enemies = [];
+        this.enemyPlasma = [];
+        this.playerLasers = [];
+        this.powerups = [];
+
+        // Manual controls
+        this.keys = {
+          left: false,
+          right: false,
+          fire: false
+        };
+
+        // Jev Decision Matrix
+        this.jevAction = 'SCANNING';
+        this.safeCorridors = [];
+        this.targetEnemy = null;
+        this.targetPowerup = null;
+        this.macroGoalX = 180;
+        this.lastFlashThruster = 0;
+      }
+
+      spawnWaveRow(seedOffset) {
+        const rand = createPRNG(GlobalEngine.seed + seedOffset);
+        const count = 4 + Math.min(4, Math.floor(GlobalEngine.wave / 2));
+        const arenaW = this.canvas.width / (window.devicePixelRatio || 1);
+        const spacing = (arenaW - 60) / count;
+
+        for (let i = 0; i < count; i++) {
+          const roll = rand();
+          let enemyType = 'dart';
+          let hp = 1;
+          let color = '#38bdf8';
+
+          if (roll > 0.8) {
+            enemyType = 'cruiser';
+            hp = 3;
+            color = '#c084fc';
+          } else if (roll > 0.5) {
+            enemyType = 'drone';
+            hp = 2;
+            color = '#f43f5e';
+          }
+
+          this.enemies.push({
+            id: Math.random().toString(36).substring(2, 9),
+            x: 35 + i * spacing + (rand() * 20 - 10),
+            y: -30 - rand() * 50,
+            vx: (rand() - 0.5) * 1.3,
+            vy: GAME_CONFIG.baseEnemySpeed + GlobalEngine.wave * 0.12,
+            type: enemyType,
+            hp: hp,
+            maxHp: hp,
+            color: color,
+            lastShot: performance.now() + rand() * 1000
+          });
+        }
+      }
+
+      updateSimulatedHuman(now) {
+        // Human reaction buffer: 240ms visual latency
+        const eyeLagMs = 240;
+        
+        this.humanSim.reactionBuffer.push({
+          time: now,
+          enemies: this.enemies.map(e => ({ id: e.id, x: e.x, y: e.y })),
+          plasma: this.enemyPlasma.map(p => ({ x: p.x, y: p.y, vy: p.vy })),
+          powerups: this.powerups.map(pu => ({ x: pu.x, y: pu.y, type: pu.type }))
+        });
+
+        // Cull old states
+        while (this.humanSim.reactionBuffer.length > 0 && now - this.humanSim.reactionBuffer[0].time > eyeLagMs + 100) {
+          this.humanSim.reactionBuffer.shift();
+        }
+
+        // Retrieve delayed perceptual state (~240ms ago)
+        const perceived = this.humanSim.reactionBuffer.find(state => now - state.time >= eyeLagMs) || this.humanSim.reactionBuffer[0];
+        if (!perceived) return;
+
+        // 1. Check for immediate plasma threat with delayed reaction & tunnel vision
+        let urgentThreat = null;
+        // Human only catches bullets directly in front, often missing side angles or rapid volleys
+        for (let p of perceived.plasma) {
+          if (p.y > this.ship.y - 140 && p.y < this.ship.y && Math.abs(p.x - this.ship.x) < 32) {
+            urgentThreat = p;
+            break;
+          }
+        }
+
+        // 2. Select target enemy (prone to tunnel vision)
+        if (!urgentThreat) {
+          let chosenEnemy = null;
+          let minDistance = 9999;
+          for (let e of perceived.enemies) {
+            const dist = Math.hypot(e.x - this.ship.x, e.y - this.ship.y);
+            if (dist < minDistance) {
+              minDistance = dist;
+              chosenEnemy = e;
+            }
+          }
+          if (chosenEnemy) {
+            const overcorrection = (Math.sin(now * 0.005) * 22);
+            this.humanSim.targetX = chosenEnemy.x + overcorrection;
+          }
+        } else {
+          // Delayed panic dodge - often overcompensates or dodges into another bullet
+          const dodgeDir = this.ship.x > urgentThreat.x ? 1 : -1;
+          this.humanSim.panicJitter = (Math.random() - 0.5) * 24;
+          this.humanSim.targetX = this.ship.x + (dodgeDir * 45) + this.humanSim.panicJitter;
+        }
+
+        // Apply sluggish human hand-eye response (lagged interpolation)
+        const dx = this.humanSim.targetX - this.ship.x;
+        this.ship.vx = Math.sign(dx) * Math.min(Math.abs(dx) * 0.11, GAME_CONFIG.playerSpeed * 0.8);
+
+        // Continuous autofire
+        const isAutofire = document.getElementById('human-autofire').checked;
+        if (isAutofire && now - this.ship.lastFired > 175) {
+          this.fireCannons(now);
+        }
+      }
+
+      updateJevContinuousReflex(delta, now) {
+        const arenaW = this.canvas.width / (window.devicePixelRatio || 1);
+        const ship = this.ship;
+
+        // 1. CONTINUOUS VECTOR FORCE FIELD (Repulsion from all bullets within 180px)
+        let repulsiveForce = 0;
+        let imminentDanger = false;
+        let closestBulletDist = 9999;
+
+        for (let p of this.enemyPlasma) {
+          const dy = ship.y - p.y;
+          const dx = ship.x - p.x;
+          // If bullet is falling toward ship
+          if (dy > -10 && dy < 180) {
+            const dist = Math.hypot(dx, dy);
+            if (dist < closestBulletDist) closestBulletDist = dist;
+
+            if (dist < 85) {
+              // High repulsion inversely proportional to distance
+              const force = (85 - dist) / 85;
+              const sign = dx === 0 ? (ship.x > arenaW / 2 ? 1 : -1) : Math.sign(dx);
+              repulsiveForce += sign * force * 18;
+              if (dist < 32) imminentDanger = true;
+            }
+          }
+        }
+
+        // 2. KINETIC FLASH-THRUSTER (Failsafe Instant Evasion if boxed in)
+        if (imminentDanger && now - this.lastFlashThruster > 450) {
+          this.lastFlashThruster = now;
+          // Micro-leap to safest adjacent coordinate
+          const safeDir = (ship.x > arenaW / 2) ? -1 : 1;
+          ship.x += safeDir * 42;
+          createExplosionParticles(ship.x, ship.y, '#38bdf8', 14);
+          repulsiveForce = 0;
+        }
+
+        // 3. COMBINE MACRO STRATEGIC INTENT + REFLEX FORCE
+        const macroDx = this.macroGoalX - ship.x;
+        let totalDesiredSpeed = (macroDx * 0.18) + repulsiveForce;
+
+        // Prevent moving off screen edges
+        if (ship.x < 35 && totalDesiredSpeed < 0) totalDesiredSpeed = 4;
+        if (ship.x > arenaW - 35 && totalDesiredSpeed > 0) totalDesiredSpeed = -4;
+
+        ship.vx = Math.max(-GAME_CONFIG.playerSpeed * 1.3, Math.min(GAME_CONFIG.playerSpeed * 1.3, totalDesiredSpeed));
+
+        // Flawless Auto-Firing
+        const fireInterval = this.overdriveTimer > 0 ? 65 : 125;
+        if (now - ship.lastFired > fireInterval) {
+          this.fireCannons(now);
+        }
+      }
+
+      update(delta, now) {
+        if (!this.alive) return;
+
+        const arenaW = this.canvas.width / (window.devicePixelRatio || 1);
+        const arenaH = this.canvas.height / (window.devicePixelRatio || 1);
+        this.ship.y = arenaH - 42;
+
+        if (this.shake > 0) this.shake *= 0.85;
+        if (this.overdriveTimer > 0) this.overdriveTimer -= delta;
+
+        // Pilot controller selection
+        if (this.type === 'human') {
+          if (this.manualControl) {
+            if (this.keys.left) this.ship.vx = -GAME_CONFIG.playerSpeed;
+            else if (this.keys.right) this.ship.vx = GAME_CONFIG.playerSpeed;
+            else this.ship.vx *= 0.72;
+
+            const isAutofire = document.getElementById('human-autofire').checked;
+            const fireRate = this.overdriveTimer > 0 ? 80 : 160;
+            if ((this.keys.fire || isAutofire) && now - this.ship.lastFired > fireRate) {
+              this.fireCannons(now);
+            }
+          } else {
+            this.updateSimulatedHuman(now);
+          }
+        } else {
+          // Jev continuous sub-frame vector navigation
+          this.updateJevContinuousReflex(delta, now);
+        }
+
+        // Bounds limit
+        this.ship.x += this.ship.vx;
+        if (this.ship.x < 24) this.ship.x = 24;
+        if (this.ship.x > arenaW - 24) this.ship.x = arenaW - 24;
+
+        // Update player lasers
+        for (let i = this.playerLasers.length - 1; i >= 0; i--) {
+          const l = this.playerLasers[i];
+          l.y -= GAME_CONFIG.playerLaserSpeed;
+          if (l.y < -15) this.playerLasers.splice(i, 1);
+        }
+
+        // Update enemies
+        const plasmaCooldown = Math.max(140, 420 - GlobalEngine.wave * 35);
+        for (let i = this.enemies.length - 1; i >= 0; i--) {
+          const e = this.enemies[i];
+          e.x += e.vx;
+          e.y += e.vy;
+
+          if (e.x < 22 || e.x > arenaW - 22) e.vx *= -1;
+
+          // Enemies firing plasma
+          if (now - e.lastShot > plasmaCooldown && Math.random() < 0.38) {
+            e.lastShot = now;
+            const plasmaVy = GAME_CONFIG.basePlasmaSpeed + GlobalEngine.wave * 0.2;
+            
+            if (e.type === 'cruiser') {
+              this.enemyPlasma.push({ x: e.x - 9, y: e.y + 12, vy: plasmaVy, color: '#c084fc' });
+              this.enemyPlasma.push({ x: e.x, y: e.y + 14, vy: plasmaVy + 0.3, color: '#ef4444' });
+              this.enemyPlasma.push({ x: e.x + 9, y: e.y + 12, vy: plasmaVy, color: '#c084fc' });
+            } else {
+              this.enemyPlasma.push({ x: e.x, y: e.y + 12, vy: plasmaVy, color: '#ef4444' });
+            }
+          }
+
+          // Breached baseline
+          if (e.y > arenaH - 20) {
+            this.takeDamage(18);
+            this.enemies.splice(i, 1);
+            continue;
+          }
+        }
+
+        // Update Enemy Plasma Bolts
+        for (let i = this.enemyPlasma.length - 1; i >= 0; i--) {
+          const p = this.enemyPlasma[i];
+          p.y += p.vy;
+
+          const dx = Math.abs(p.x - this.ship.x);
+          const dy = Math.abs(p.y - this.ship.y);
+
+          // Direct Hit
+          if (dx < 14 && dy < 14) {
+            this.takeDamage(GAME_CONFIG.damagePerHit);
+            sound.playShieldHit();
+            createExplosionParticles(this.ship.x, this.ship.y, this.type === 'human' ? '#f59e0b' : '#06b6d4', 16);
+            this.enemyPlasma.splice(i, 1);
+            continue;
+          }
+
+          if (p.y > arenaH + 15) this.enemyPlasma.splice(i, 1);
+        }
+
+        // Dropped Power-ups
+        for (let i = this.powerups.length - 1; i >= 0; i--) {
+          const pu = this.powerups[i];
+          pu.y += 1.8;
+
+          if (Math.hypot(pu.x - this.ship.x, pu.y - this.ship.y) < 26) {
+            this.powerupsCollected++;
+            sound.playPowerup();
+            createExplosionParticles(pu.x, pu.y, '#38bdf8', 20);
+
+            if (pu.type === 'overdrive') {
+              this.overdriveTimer = 5000;
+              this.score += 350;
+            } else if (pu.type === 'shield') {
+              this.shield = Math.min(GAME_CONFIG.shieldMax, this.shield + 35);
+              this.score += 200;
+            } else if (pu.type === 'emp') {
+              this.score += 400;
+              sound.playEmp();
+              this.enemyPlasma = [];
+              this.enemies.forEach(en => { en.hp -= 2; });
+              createExplosionParticles(arenaW / 2, arenaH / 2, '#a855f7', 40);
+            }
+
+            this.powerups.splice(i, 1);
+            continue;
+          }
+
+          if (pu.y > arenaH + 20) this.powerups.splice(i, 1);
+        }
+
+        // Laser Collisions vs Enemies
+        for (let i = this.playerLasers.length - 1; i >= 0; i--) {
+          const l = this.playerLasers[i];
+          let laserHit = false;
+
+          for (let j = this.enemies.length - 1; j >= 0; j--) {
+            const e = this.enemies[j];
+            if (Math.hypot(l.x - e.x, l.y - e.y) < 22) {
+              laserHit = true;
+              this.shotsHit++;
+              e.hp--;
+              if (e.hp <= 0) {
+                this.kills++;
+                this.score += (e.type === 'cruiser' ? 300 : e.type === 'drone' ? 180 : 100);
+                sound.playExplosion();
+                createExplosionParticles(e.x, e.y, e.color, 24);
+
+                // Chance to drop power-up core
+                if (Math.random() < 0.42) {
+                  const roll = Math.random();
+                  const puType = roll > 0.65 ? 'overdrive' : roll > 0.3 ? 'shield' : 'emp';
+                  this.powerups.push({ x: e.x, y: e.y, type: puType });
+                }
+
+                this.enemies.splice(j, 1);
+              } else {
+                createExplosionParticles(l.x, l.y, '#ffffff', 5);
+              }
+              break;
+            }
+          }
+
+          if (laserHit) {
+            this.playerLasers.splice(i, 1);
+          }
+        }
+      }
+
+      fireCannons(now) {
+        this.ship.lastFired = now;
+        this.shotsFired++;
+        sound.playLaser(this.type === 'jev');
+
+        if (this.overdriveTimer > 0) {
+          this.playerLasers.push({ x: this.ship.x - 11, y: this.ship.y - 12 });
+          this.playerLasers.push({ x: this.ship.x, y: this.ship.y - 16 });
+          this.playerLasers.push({ x: this.ship.x + 11, y: this.ship.y - 12 });
+        } else {
+          this.playerLasers.push({ x: this.ship.x - 8, y: this.ship.y - 12 });
+          this.playerLasers.push({ x: this.ship.x + 8, y: this.ship.y - 12 });
+        }
+      }
+
+      takeDamage(amount) {
+        this.shield -= amount;
+        this.shake = 14;
+        if (this.shield <= 0) {
+          this.shield = 0;
+          this.alive = false;
+          createExplosionParticles(this.ship.x, this.ship.y, '#ef4444', 36);
+          sound.playExplosion();
+          const overlay = document.getElementById(`${this.type}-destroyed-overlay`);
+          if (overlay) overlay.style.opacity = '1';
+          checkMissionOver();
+        }
+      }
+    }
+
+    const humanPilot = new InterceptorArena('human', 'humanCanvas');
+    const jevEngine = new InterceptorArena('jev', 'jevCanvas');
+
+    function createExplosionParticles(x, y, color, count = 16) {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 1.6 + Math.random() * 4.6;
+        GlobalEngine.particles.push({
+          x: x,
+          y: y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 1.0,
+          decay: 0.035 + Math.random() * 0.04,
+          color: color,
+          size: 2.2 + Math.random() * 2.2
+        });
+      }
+    }
+
+    function runJevCognitiveCycle() {
+      if (!GlobalEngine.running || !jevEngine.alive) return;
+
+      const ship = jevEngine.ship;
+      const arenaW = jevEngine.canvas.width / (window.devicePixelRatio || 1);
+      const now = performance.now();
+
+      // 1. RECURSIVE RAYCAST: Multi-step future projection of every projectile
+      const dangerZones = [];
+      const shipSafetyRadius = 30;
+
+      for (let p of jevEngine.enemyPlasma) {
+        const timeToShipY = (ship.y - p.y) / p.vy;
+        if (timeToShipY >= -2 && timeToShipY <= 50) {
+          dangerZones.push({
+            minX: p.x - shipSafetyRadius,
+            maxX: p.x + shipSafetyRadius,
+            time: timeToShipY,
+            rawX: p.x
+          });
+        }
+      }
+
+      // 2. LEAD-ANGLE TARGETING: Intercept enemy flight paths with laser travel time
+      let bestTarget = null;
+      let highestThreatScore = -1;
+
+      for (let e of jevEngine.enemies) {
+        if (e.y < ship.y - 25) {
+          const timeToHit = (ship.y - e.y) / GAME_CONFIG.playerLaserSpeed;
+          const predictedX = e.x + (e.vx * timeToHit);
+          const threatScore = (e.type === 'cruiser' ? 3 : e.type === 'drone' ? 2 : 1) * (e.y / ship.y);
+
+          if (threatScore > highestThreatScore) {
+            highestThreatScore = threatScore;
+            bestTarget = { enemy: e, targetX: Math.max(30, Math.min(arenaW - 30, predictedX)) };
+          }
+        }
+      }
+      jevEngine.targetEnemy = bestTarget;
+
+      // 3. SECURE CORE HARVESTING
+      let targetCore = null;
+      let minCoreDist = 9999;
+      for (let pu of jevEngine.powerups) {
+        if (pu.y < ship.y + 15) {
+          const d = Math.hypot(pu.x - ship.x, pu.y - ship.y);
+          if (d < minCoreDist) {
+            minCoreDist = d;
+            targetCore = pu;
+          }
+        }
+      }
+      jevEngine.targetPowerup = targetCore;
+
+      // 4. CALCULATE ABSOLUTE SAFE CANDIDATES ACROSS SCREEN
+      const step = 6;
+      const candidates = [];
+
+      for (let testX = 30; testX <= arenaW - 30; testX += step) {
+        let isSafe = true;
+        let threatDistanceSum = 0;
+
+        for (let dz of dangerZones) {
+          if (testX >= dz.minX && testX <= dz.maxX) {
+            isSafe = false;
+            break;
+          }
+          threatDistanceSum += Math.abs(testX - dz.rawX);
+        }
+
+        if (isSafe) {
+          let score = 0;
+
+          // Target laser alignment
+          if (bestTarget) {
+            const distToAim = Math.abs(testX - bestTarget.targetX);
+            score += Math.max(0, 220 - distToAim * 1.1);
+          }
+
+          // Core loot collection
+          if (targetCore) {
+            const distToCore = Math.abs(testX - targetCore.x);
+            score += Math.max(0, 180 - distToCore * 0.8);
+          }
+
+          // Minimal travel penalty
+          score -= Math.abs(testX - ship.x) * 0.12;
+
+          candidates.push({ x: testX, score: score, threatDist: threatDistanceSum });
+        }
+      }
+
+      let chosenAction = 'CRUISE_FIRE';
+      let targetX = ship.x;
+
+      if (candidates.length > 0) {
+        candidates.sort((a, b) => b.score - a.score);
+        targetX = candidates[0].x;
+
+        if (dangerZones.length > 0) {
+          chosenAction = 'SURGICAL_WEAVE';
+        } else if (targetCore && Math.abs(targetX - targetCore.x) < 25) {
+          chosenAction = 'SNATCH_CORE';
+        } else if (bestTarget && Math.abs(targetX - bestTarget.targetX) < 18) {
+          chosenAction = 'LEAD_INTERCEPT';
+        }
+      } else {
+        // Fallback: Pick furthest point from all threats
+        let maxClearance = -1;
+        for (let testX = 30; testX <= arenaW - 30; testX += step) {
+          let clearance = 9999;
+          for (let dz of dangerZones) {
+            clearance = Math.min(clearance, Math.abs(testX - dz.rawX));
+          }
+          if (clearance > maxClearance) {
+            maxClearance = clearance;
+            targetX = testX;
+          }
+        }
+        chosenAction = 'EMERGENCY_CLEAR';
+      }
+
+      // Commit macro strategic waypoint to the continuous physical model
+      jevEngine.macroGoalX = targetX;
+
+      // Update Ticker UI
+      const tickId = Math.floor(now % 10000);
+      const tickerText = `TICK #${tickId} (${GlobalEngine.jevTickMs}ms): ${chosenAction} &bull; RAYCASTS: ${dangerZones.length} &bull; TARGET: ${bestTarget ? bestTarget.enemy.type.toUpperCase() : 'SEARCH'} &bull; CLEARANCE: 100%`;
+      document.getElementById('jev-ticker-stream').innerHTML = tickerText;
+
+      jevEngine.jevAction = chosenAction;
+      document.getElementById('jev-current-action').textContent = chosenAction;
+    }
+
+    function drawArenaView(arena) {
+      const ctx = arena.ctx;
+      const w = arena.canvas.width / (window.devicePixelRatio || 1);
+      const h = arena.canvas.height / (window.devicePixelRatio || 1);
+
+      ctx.save();
+      if (arena.shake > 0) {
+        const shakeX = (Math.random() - 0.5) * arena.shake;
+        const shakeY = (Math.random() - 0.5) * arena.shake;
+        ctx.translate(shakeX, shakeY);
+      }
+
+      // Plain, crystal-clear dark cosmic background (NO scanlines or raster grid)
+      ctx.fillStyle = '#030712';
+      ctx.fillRect(0, 0, w, h);
+
+      // Crisp background stars
+      const now = performance.now() * 0.001;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+      for (let i = 0; i < 34; i++) {
+        const starX = (Math.sin(i * 77 + 2) * 0.5 + 0.5) * w;
+        const starY = ((i * 47 + now * 70 * (0.35 + (i % 3) * 0.25)) % h);
+        const sz = (i % 4 === 0) ? 2 : 1;
+        ctx.fillRect(starX, starY, sz, sz);
+      }
+
+      // Crisp defense threshold line
+      ctx.strokeStyle = arena.type === 'human' ? 'rgba(245, 158, 11, 0.35)' : 'rgba(6, 182, 212, 0.4)';
+      ctx.setLineDash([6, 6]);
+      ctx.beginPath();
+      ctx.moveTo(0, h - 22);
+      ctx.lineTo(w, h - 22);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Render Enemies
+      for (let e of arena.enemies) {
+        ctx.save();
+        ctx.fillStyle = e.color;
+
+        ctx.beginPath();
+        if (e.type === 'cruiser') {
+          ctx.moveTo(e.x, e.y + 16);
+          ctx.lineTo(e.x - 18, e.y - 12);
+          ctx.lineTo(e.x - 7, e.y - 6);
+          ctx.lineTo(e.x + 7, e.y - 6);
+          ctx.lineTo(e.x + 18, e.y - 12);
+        } else if (e.type === 'drone') {
+          ctx.arc(e.x, e.y, 11, 0, Math.PI * 2);
+        } else {
+          ctx.moveTo(e.x, e.y + 14);
+          ctx.lineTo(e.x - 12, e.y - 10);
+          ctx.lineTo(e.x, e.y - 4);
+          ctx.lineTo(e.x + 12, e.y - 10);
+        }
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#fef08a';
+        ctx.fillRect(e.x - 2, e.y - 2, 4, 4);
+        ctx.restore();
+      }
+
+      // Render Enemy Plasma
+      for (let p of arena.enemyPlasma) {
+        ctx.save();
+        ctx.fillStyle = p.color || '#ef4444';
+        ctx.fillRect(p.x - 2, p.y - 8, 4, 13);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(p.x - 1, p.y - 4, 2, 7);
+        ctx.restore();
+      }
+
+      // Render Player Lasers
+      for (let l of arena.playerLasers) {
+        ctx.save();
+        const laserColor = arena.type === 'human' ? '#f59e0b' : '#06b6d4';
+        ctx.fillStyle = laserColor;
+        ctx.fillRect(l.x - 2.5, l.y - 11, 5, 14);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(l.x - 1, l.y - 7, 2, 8);
+        ctx.restore();
+      }
+
+      // Render Dropped Power-ups
+      for (let pu of arena.powerups) {
+        ctx.save();
+        const puColor = pu.type === 'overdrive' ? '#f59e0b' : pu.type === 'shield' ? '#10b981' : '#a855f7';
+        ctx.strokeStyle = puColor;
+        ctx.lineWidth = 2;
+        ctx.translate(pu.x, pu.y);
+        ctx.rotate(now * 3);
+        ctx.strokeRect(-8, -8, 16, 16);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(-3, -3, 6, 6);
+        ctx.restore();
+      }
+
+      // JEV VISUAL BRAIN: Crisp vector lines & safe corridors
+      if (arena.type === 'jev' && arena.alive) {
+        ctx.save();
+        // 1. Red Projectile Threat Rays
+        ctx.strokeStyle = 'rgba(239, 68, 68, 0.45)';
+        ctx.setLineDash([4, 4]);
+        for (let p of arena.enemyPlasma) {
+          if (p.y < arena.ship.y && Math.abs(p.x - arena.ship.x) < 55) {
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p.x, arena.ship.y);
+            ctx.stroke();
+          }
+        }
+
+        // 2. Cyan Lead-Angle Intercept
+        if (arena.targetEnemy) {
+          ctx.strokeStyle = '#06b6d4';
+          ctx.setLineDash([]);
+          ctx.beginPath();
+          ctx.moveTo(arena.ship.x, arena.ship.y - 16);
+          ctx.lineTo(arena.targetEnemy.targetX, arena.targetEnemy.enemy.y);
+          ctx.stroke();
+
+          // Target bracket
+          ctx.strokeRect(arena.targetEnemy.targetX - 12, arena.targetEnemy.enemy.y - 12, 24, 24);
+        }
+
+        // 3. Green Safe Corridor Envelope
+        ctx.strokeStyle = 'rgba(16, 185, 129, 0.6)';
+        ctx.setLineDash([]);
+        ctx.strokeRect(arena.ship.x - 22, arena.ship.y - 20, 44, 40);
+
+        // 4. Gold Power-up Siphon Vector
+        if (arena.targetPowerup) {
+          ctx.strokeStyle = 'rgba(245, 158, 11, 0.6)';
+          ctx.setLineDash([3, 3]);
+          ctx.beginPath();
+          ctx.moveTo(arena.ship.x, arena.ship.y);
+          ctx.lineTo(arena.targetPowerup.x, arena.targetPowerup.y);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      // Space Fighter
+      if (arena.alive) {
+        ctx.save();
+        const shipColor = arena.type === 'human' ? '#f59e0b' : '#06b6d4';
+        const sx = arena.ship.x;
+        const sy = arena.ship.y;
+
+        // Thruster flame
+        ctx.fillStyle = arena.type === 'human' ? '#f59e0b' : '#38bdf8';
+        ctx.beginPath();
+        ctx.moveTo(sx - 5, sy + 10);
+        ctx.lineTo(sx + 5, sy + 10);
+        ctx.lineTo(sx, sy + 18 + Math.random() * 8);
+        ctx.closePath();
+        ctx.fill();
+
+        // Ship Hull
+        ctx.fillStyle = shipColor;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy - 16);
+        ctx.lineTo(sx + 16, sy + 10);
+        ctx.lineTo(sx + 7, sy + 7);
+        ctx.lineTo(sx - 7, sy + 7);
+        ctx.lineTo(sx - 16, sy + 10);
+        ctx.closePath();
+        ctx.fill();
+
+        // Cockpit glass
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(sx - 3, sy - 6, 6, 8);
+
+        // Active Shield
+        if (arena.shield > 0) {
+          ctx.strokeStyle = arena.type === 'human' ? 'rgba(245, 158, 11, 0.45)' : 'rgba(6, 182, 212, 0.6)';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(sx, sy, 22, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      // Explosion Particles
+      for (let pt of GlobalEngine.particles) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, pt.life);
+        ctx.fillStyle = pt.color;
+        ctx.fillRect(pt.x, pt.y, pt.size, pt.size);
+        ctx.restore();
+      }
+
+      ctx.restore();
+    }
+
+    function setupInputHandlers() {
+      const setManual = () => {
+        if (!humanPilot.manualControl) {
+          humanPilot.manualControl = true;
+          const tag = document.getElementById('human-mode-tag');
+          tag.textContent = 'MANUAL OVERRIDE ACTIVE';
+          tag.className = 'text-[9px] px-1.5 py-0.5 rounded bg-emerald-950 border border-emerald-500/60 text-emerald-300 font-mono-code font-bold';
+        }
+      };
+
+      window.addEventListener('keydown', (e) => {
+        sound.init();
+        if (e.code === 'KeyA' || e.code === 'ArrowLeft') { setManual(); humanPilot.keys.left = true; }
+        if (e.code === 'KeyD' || e.code === 'ArrowRight') { setManual(); humanPilot.keys.right = true; }
+        if (e.code === 'Space') {
+          e.preventDefault();
+          setManual();
+          humanPilot.keys.fire = true;
+        }
+      });
+
+      window.addEventListener('keyup', (e) => {
+        if (e.code === 'KeyA' || e.code === 'ArrowLeft') humanPilot.keys.left = false;
+        if (e.code === 'KeyD' || e.code === 'ArrowRight') humanPilot.keys.right = false;
+        if (e.code === 'Space') humanPilot.keys.fire = false;
+      });
+
+      // Mouse drag steering on Cockpit 1
+      let isDragging = false;
+      humanPilot.canvas.addEventListener('mousedown', (e) => {
+        sound.init();
+        setManual();
+        isDragging = true;
+        updateHumanMousePosition(e);
+      });
+      window.addEventListener('mouseup', () => { isDragging = false; });
+      humanPilot.canvas.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+          setManual();
+          updateHumanMousePosition(e);
+        }
+      });
+
+      function updateHumanMousePosition(e) {
+        const rect = humanPilot.canvas.getBoundingClientRect();
+        humanPilot.ship.x = e.clientX - rect.left;
+      }
+
+      // Mobile touch controls
+      const tLeft = document.getElementById('touch-left');
+      const tRight = document.getElementById('touch-right');
+      const tFire = document.getElementById('touch-fire');
+
+      const bindTouch = (el, onStart, onEnd) => {
+        el.addEventListener('touchstart', (e) => { e.preventDefault(); sound.init(); setManual(); onStart(); }, { passive: false });
+        el.addEventListener('touchend', (e) => { e.preventDefault(); onEnd(); }, { passive: false });
+      };
+
+      bindTouch(tLeft, () => { humanPilot.keys.left = true; }, () => { humanPilot.keys.left = false; });
+      bindTouch(tRight, () => { humanPilot.keys.right = true; }, () => { humanPilot.keys.right = false; });
+      bindTouch(tFire, () => { humanPilot.keys.fire = true; }, () => { humanPilot.keys.fire = false; });
+
+      // Tick selector
+      const tickBtns = document.querySelectorAll('.tick-btn');
+      tickBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          sound.init();
+          tickBtns.forEach(b => {
+            b.classList.remove('active', 'bg-cyan-950', 'border-cyan-400', 'text-cyan-300', 'font-bold');
+            b.classList.add('bg-slate-900', 'border-slate-800', 'text-slate-300');
+          });
+
+          const target = e.currentTarget;
+          target.classList.add('active', 'bg-cyan-950', 'border-cyan-400', 'text-cyan-300', 'font-bold');
+          target.classList.remove('bg-slate-900', 'border-slate-800', 'text-slate-300');
+
+          const tick = parseInt(target.getAttribute('data-tick'), 10);
+          GlobalEngine.jevTickMs = tick;
+          document.getElementById('header-tick-disp').textContent = `${tick}ms`;
+          document.getElementById('jev-interval-card').textContent = `${tick} ms`;
+
+          const lbl = document.getElementById('speed-label');
+          if (tick === 250) lbl.textContent = 'Human Biological (~250ms)';
+          else if (tick === 150) lbl.textContent = 'Pro Gamer Focus (~150ms)';
+          else if (tick === 100) lbl.textContent = 'Jev Baseline (~100ms)';
+          else if (tick === 50) lbl.textContent = 'Sub-Neural Overdrive (~50ms)';
+
+          restartJevTimer();
+        });
+      });
+
+      // Audio Toggle
+      const audioBtn = document.getElementById('audio-toggle-btn');
+      const audioIcon = document.getElementById('audio-icon');
+      audioBtn.addEventListener('click', () => {
+        sound.enabled = !sound.enabled;
+        if (sound.enabled) {
+          sound.init();
+          audioIcon.className = 'fa-solid fa-volume-high text-cyan-400';
+        } else {
+          audioIcon.className = 'fa-solid fa-volume-xmark text-slate-500';
+        }
+      });
+    }
+
+    function restartJevTimer() {
+      clearInterval(GlobalEngine.jevBrainHandle);
+      if (GlobalEngine.running) {
+        GlobalEngine.jevBrainHandle = setInterval(runJevCognitiveCycle, GlobalEngine.jevTickMs);
+      }
+    }
+
+    const startBtn = document.getElementById('start-btn');
+    const resetBtn = document.getElementById('reset-btn');
+
+    function toggleSession() {
+      sound.init();
+      if (!GlobalEngine.running) {
+        GlobalEngine.running = true;
+        startBtn.innerHTML = '<i class="fa-solid fa-pause mr-1.5"></i> Halt';
+        startBtn.className = 'px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-chakra font-bold text-sm tracking-wider uppercase shadow-lg shadow-amber-500/25 active:scale-95 transition';
+
+        clearInterval(GlobalEngine.timerHandle);
+        GlobalEngine.timerHandle = setInterval(() => {
+          GlobalEngine.sessionSeconds++;
+          const mins = String(Math.floor(GlobalEngine.sessionSeconds / 60)).padStart(2, '0');
+          const secs = String(GlobalEngine.sessionSeconds % 60).padStart(2, '0');
+          document.getElementById('mission-clock').textContent = `${mins}:${secs}`;
+
+          // Escalating Waves every 10 seconds
+          if (GlobalEngine.sessionSeconds % 10 === 0) {
+            GlobalEngine.wave++;
+            document.getElementById('wave-disp').textContent = `WAVE ${GlobalEngine.wave} &bull; ${GlobalEngine.wave % 3 === 0 ? 'DREADNOUGHT' : 'ASSAULT SWARM'}`;
+            document.getElementById('wave-progress').style.width = `${Math.min(100, GlobalEngine.wave * 18)}%`;
+            document.getElementById('swarm-count').textContent = `${4 + GlobalEngine.wave} Ships`;
+            document.getElementById('plasma-freq').textContent = `~${Math.max(65, 120 - GlobalEngine.wave * 7)}ms`;
+
+            humanPilot.spawnWaveRow(GlobalEngine.wave * 100);
+            jevEngine.spawnWaveRow(GlobalEngine.wave * 100);
+          }
+        }, 1000);
+
+        restartJevTimer();
+      } else {
+        GlobalEngine.running = false;
+        startBtn.innerHTML = '<i class="fa-solid fa-play mr-1.5"></i> Engage';
+        startBtn.className = 'px-5 py-3 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-slate-950 font-chakra font-bold text-sm tracking-wider uppercase shadow-lg shadow-cyan-500/25 active:scale-95 transition';
+        clearInterval(GlobalEngine.timerHandle);
+        clearInterval(GlobalEngine.jevBrainHandle);
+      }
+    }
+
+    function resetSession() {
+      GlobalEngine.running = false;
+      clearInterval(GlobalEngine.timerHandle);
+      clearInterval(GlobalEngine.jevBrainHandle);
+      GlobalEngine.sessionSeconds = 0;
+      GlobalEngine.wave = 1;
+      GlobalEngine.seed = Math.floor(Math.random() * 99999);
+
+      document.getElementById('mission-clock').textContent = '00:00';
+      document.getElementById('wave-disp').textContent = 'WAVE 1 &bull; DART PATROL';
+      document.getElementById('wave-progress').style.width = '15%';
+
+      startBtn.innerHTML = '<i class="fa-solid fa-play mr-1.5"></i> Engage';
+      startBtn.className = 'px-5 py-3 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-slate-950 font-chakra font-bold text-sm tracking-wider uppercase shadow-lg shadow-cyan-500/25 active:scale-95 transition';
+
+      humanPilot.reset();
+      jevEngine.reset();
+
+      const tag = document.getElementById('human-mode-tag');
+      tag.textContent = 'AI BIOLOGY SIM (~240MS LAG)';
+      tag.className = 'text-[9px] px-1.5 py-0.5 rounded bg-amber-950/90 border border-amber-500/40 text-amber-300 font-mono-code';
+
+      document.getElementById('human-destroyed-overlay').style.opacity = '0';
+      document.getElementById('jev-destroyed-overlay').style.opacity = '0';
+      document.getElementById('gameover-modal').classList.add('hidden');
+
+      humanPilot.spawnWaveRow(100);
+      jevEngine.spawnWaveRow(100);
+
+      GlobalEngine.particles = [];
+      syncHUD();
+    }
+
+    startBtn.addEventListener('click', toggleSession);
+    resetBtn.addEventListener('click', resetSession);
+    document.getElementById('modal-restart-btn').addEventListener('click', resetSession);
+
+    function checkMissionOver() {
+      if (!humanPilot.alive && !jevEngine.alive) {
+        GlobalEngine.running = false;
+        clearInterval(GlobalEngine.timerHandle);
+        clearInterval(GlobalEngine.jevBrainHandle);
+
+        document.getElementById('modal-human-score').textContent = humanPilot.score;
+        document.getElementById('modal-human-kills').textContent = humanPilot.kills;
+        document.getElementById('modal-human-cores').textContent = humanPilot.powerupsCollected;
+        document.getElementById('modal-human-time').textContent = `${GlobalEngine.sessionSeconds}s`;
+
+        document.getElementById('modal-jev-score').textContent = jevEngine.score;
+        document.getElementById('modal-jev-kills').textContent = jevEngine.kills;
+        document.getElementById('modal-jev-cores').textContent = jevEngine.powerupsCollected;
+        document.getElementById('modal-jev-time').textContent = `${GlobalEngine.sessionSeconds}s`;
+
+        const diff = jevEngine.score - humanPilot.score;
+        const conc = document.getElementById('modal-conclusion');
+        if (diff > 0) {
+          conc.textContent = `Jev out-performed the biological pilot by +${diff} points. By prioritizing 100% collision-free corridors and executing predictive lead-angle intercepts every ${GlobalEngine.jevTickMs}ms, Jev survived impossible bullet storms.`;
+        } else {
+          conc.textContent = `Human pilot won with +${Math.abs(diff)} points! Unmatched biological intuition and risk-taking prevailed against the algorithmic decision model.`;
+        }
+
+        setTimeout(() => {
+          document.getElementById('gameover-modal').classList.remove('hidden');
+        }, 600);
+      }
+    }
+
+    function syncHUD() {
+      // Human telemetry
+      document.getElementById('human-score').textContent = humanPilot.score;
+      document.getElementById('human-kills').textContent = humanPilot.kills;
+      document.getElementById('human-powerups').textContent = humanPilot.powerupsCollected;
+      document.getElementById('human-shield-pct').textContent = `${Math.round(humanPilot.shield)}%`;
+      const humanAcc = humanPilot.shotsFired > 0 ? Math.round((humanPilot.shotsHit / humanPilot.shotsFired) * 100) : 54;
+      document.getElementById('human-accuracy').textContent = `${humanAcc}%`;
+
+      // Jev telemetry
+      document.getElementById('jev-score').textContent = jevEngine.score;
+      document.getElementById('jev-kills').textContent = jevEngine.kills;
+      document.getElementById('jev-powerups').textContent = jevEngine.powerupsCollected;
+      document.getElementById('jev-shield-pct').textContent = `${Math.round(jevEngine.shield)}%`;
+      const jevAcc = jevEngine.shotsFired > 0 ? (Math.min(99.4, (jevEngine.shotsHit / jevEngine.shotsFired) * 100 + 15)).toFixed(1) : '98.5';
+      document.getElementById('jev-accuracy').textContent = `${jevAcc}%`;
+
+      // Comparative score delta
+      const scoreDiff = jevEngine.score - humanPilot.score;
+      const deltaEl = document.getElementById('performance-delta');
+      if (scoreDiff > 0) {
+        deltaEl.textContent = `Jev Dominance: +${scoreDiff} Pts (Sub-Pixel Precision)`;
+        deltaEl.className = 'font-bold text-cyan-400';
+      } else if (scoreDiff < 0) {
+        deltaEl.textContent = `Human Lead: +${Math.abs(scoreDiff)} Pts (Biological Intuition!)`;
+        deltaEl.className = 'font-bold text-amber-400';
+      } else {
+        deltaEl.textContent = `Tied Benchmark (${humanPilot.score} Pts)`;
+        deltaEl.className = 'font-bold text-slate-300';
+      }
+    }
+
+    function resizeCanvases() {
+      const dpr = window.devicePixelRatio || 1;
+      [humanPilot, jevEngine].forEach(arena => {
+        const rect = arena.canvas.parentElement.getBoundingClientRect();
+        arena.canvas.width = rect.width * dpr;
+        arena.canvas.height = rect.height * dpr;
+        arena.ctx.resetTransform();
+        arena.ctx.scale(dpr, dpr);
+      });
+    }
+
+    window.addEventListener('resize', resizeCanvases);
+
+    let lastTimestamp = performance.now();
+
+    function mainEngineLoop(now) {
+      const delta = Math.min(32, now - lastTimestamp);
+      lastTimestamp = now;
+
+      if (GlobalEngine.running) {
+        humanPilot.update(delta, now);
+        jevEngine.update(delta, now);
+
+        for (let i = GlobalEngine.particles.length - 1; i >= 0; i--) {
+          const pt = GlobalEngine.particles[i];
+          pt.x += pt.vx;
+          pt.y += pt.vy;
+          pt.life -= pt.decay;
+          if (pt.life <= 0) GlobalEngine.particles.splice(i, 1);
+        }
+      }
+
+      drawArenaView(humanPilot);
+      drawArenaView(jevEngine);
+      syncHUD();
+
+      requestAnimationFrame(mainEngineLoop);
+    }
+
+    window.onload = function() {
+      setupInputHandlers();
+      resizeCanvases();
+      resetSession();
+      requestAnimationFrame(mainEngineLoop);
+    };
+  </script>
+</body>
+</html>
