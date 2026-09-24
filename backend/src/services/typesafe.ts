@@ -21,7 +21,10 @@ export const PowerupStateSchema = z.object({
   id: z.string().optional(),
   x: z.number(),
   y: z.number(),
-  type: z.enum(["SHIELD", "RAPID_FIRE", "EMP", "CORE", "OVERDRIVE"]),
+  type: z.preprocess(
+    (val) => (typeof val === "string" ? val.toUpperCase() : val),
+    z.enum(["SHIELD", "RAPID_FIRE", "EMP", "CORE", "OVERDRIVE"])
+  ),
 });
 
 export const GameStateSchema = z.object({
