@@ -180,3 +180,4 @@ The project deliberately keeps the environment small so that this loop remains v
 
 > Watch the full real-time reflex duel between Human manual input and Jev System 1:
 
+[▶ Watch Demo](Demo%20Video/Demo.mp4)
