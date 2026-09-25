@@ -2,7 +2,9 @@
 
 An interactive real-time space duel benchmarking **Human Biological Reaction Latency (~240ms)** against **TypeSafe Jev System 1 Decision API (~100ms)**.
 
-![Interceptor Architecture](https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/crosshair.svg)
+A real time experiment comparing human control with Jev based decision making inside a fast moving space combat simulation.
+
+The game gives a human pilot and an autonomous Jev pilot the same environment. Threats, targets and energy cores appear continuously. The human reacts through keyboard or pointer input while Jev receives the current game state and selects its next action on a fixed decision cycle.
 
 ---
 
@@ -86,6 +88,23 @@ npm run dev
 
 ---
 
+## Two Pilots. One Environment.
+
+The most important property of the experiment is that both pilots operate against the same simulation rules.
+
+Human Pilot	Jev Pilot
+Keyboard and pointer input	Structured game state
+Manual decisions	Typed decisions
+Continuous control	Fixed decision cycle
+Human reaction	Programmatic decision
+Direct interaction	Autonomous action
+
+This makes the system useful as a visual demonstration of a different style of AI interaction.
+
+Instead of asking an AI model to describe what should happen, the system gives it a small action space and lets it repeatedly choose what happens next.
+
+---
+
 ## 🎮 Pilot Controls & Gameplay
 
 | Key / Input | Action | Cockpit Affected |
@@ -110,3 +129,39 @@ npm run dev
 - **Zero Page Scrolling**: The interface is strictly contained within `100vh; max-height: 100vh; overflow: hidden;` for laptop screens (1366x768 to 1920x1080).
 - **Obsidian Dark Cosmic Aesthetic**: Deep obsidian `#040711`, crisp cyan `#00f0ff`, amber `#ffaa00`, and laser red `#ff3366`.
 - **Crisp Vector Fidelity**: Plain, razor-sharp HUD elements without CRT lines or blurry scanlines.
+
+---
+
+## Local Fallback
+
+The backend includes a local decision fallback for development environments where a Jev API key is not configured.
+
+The fallback allows the game loop and frontend to be tested without requiring a live Jev request.
+
+Fallback decisions are not treated as Jev results.
+
+For any Jev specific evaluation, the application should be run with the actual Jev service configured.
+
+## Why This Experiment
+
+Most AI interfaces are built around generated text.
+
+This project uses AI for a much smaller problem.
+
+Choose an action.
+
+Choose it repeatedly.
+
+Choose it while the environment changes.
+
+That creates a direct feedback loop between state, decision and action.
+
+              Observe
+                ↓
+              Decide
+                ↓
+              Act
+                ↓
+              Observe Again
+
+The project deliberately keeps the environment small so that this loop remains visible.
