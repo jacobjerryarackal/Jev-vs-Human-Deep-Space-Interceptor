@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { GameStateSchema, getJevDecision } from "../services/typesafe.js";
+import { GameStateSchema, getJevDecision } from "../services/typesafe";
 
 export const jevRouter = Router();
 
