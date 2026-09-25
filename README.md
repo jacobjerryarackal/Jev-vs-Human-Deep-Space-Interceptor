@@ -88,6 +88,16 @@ npm run dev
 
 ---
 
+## Production Deployment
+
+- Production Web Application: `https://jev-vs-human-deep-space-interceptor.vercel.app`
+- Production Backend API: `https://jev-vs-human-deep-space-interceptor.onrender.com`
+- Backend Health Probe: `https://jev-vs-human-deep-space-interceptor.onrender.com/api/health`
+- Backend Decision Endpoint: `https://jev-vs-human-deep-space-interceptor.onrender.com/api/jev-decide`
+
+
+---
+
 ## Two Pilots. One Environment.
 
 The most important property of the experiment is that both pilots operate against the same simulation rules.
