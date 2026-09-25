@@ -180,4 +180,4 @@ The project deliberately keeps the environment small so that this loop remains v
 
 > Watch the full real-time reflex duel between Human manual input and Jev System 1:
 
-[▶ Watch Live Gameplay Demo Video](./Demo%20Video/demo.mp4)
+[▶ Stream Gameplay Demo Video (MP4)](https://raw.githubusercontent.com/jacobjerryarackal/Jev-vs-Human-Deep-Space-Interceptor/main/Demo%20Video/demo.mp4)
