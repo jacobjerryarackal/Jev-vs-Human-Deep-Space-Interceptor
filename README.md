@@ -175,3 +175,9 @@ That creates a direct feedback loop between state, decision and action.
               Observe Again
 
 The project deliberately keeps the environment small so that this loop remains visible.
+
+## 🎬 Operational Duel Benchmark Demo
+
+> Watch the full real-time reflex duel between Human manual input and Jev System 1:
+
+[▶ Watch Live Gameplay Demo Video](./demo-video/demo.mp4)
